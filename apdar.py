@@ -141,3 +141,4 @@ df.to_excel("daraz_products_all_pages.xlsx", index=False)
 
 print(f"Scraped {len(data)} products successfully and saved to daraz_products_all_pages.xlsx")
 driver.quit()
+
