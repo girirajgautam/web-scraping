@@ -1,30 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Product Price Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <!-- PapaParse for CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
+    body { font-family: Arial; background: #f4f6f8; margin: 0; padding: 20px; }
     h1 { text-align: center; margin-bottom: 10px; }
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
-    .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center; }
-    .card h2 { margin: 0; font-size: 22px; color: #2563eb; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center; }
+    .card h2 { margin: 0; font-size: 26px; color: #2563eb; }
     .card p { margin: 6px 0 0; color: #555; }
-    .chart-wrapper { width: 100%; overflow-x: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
-    canvas { cursor: pointer; height:250px !important; }
-    table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
+    .chart-wrapper { width: 100%; overflow-x: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+    canvas { cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
     th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
-    th { background: #f1f5f9; cursor: pointer; }
+    th { background: #f1f5f9; }
     tr:hover { background: #f9fafb; }
-    input { padding: 8px; width: 100%; max-width: 300px; border-radius: 6px; border: 1px solid #ccc; margin-bottom: 15px; }
+    .controls { margin: 15px 0; }
+    input { padding: 8px; width: 100%; max-width: 300px; border-radius: 6px; border: 1px solid #ccc; }
   </style>
 </head>
 <body>
@@ -39,10 +39,12 @@
 </div>
 
 <div class="chart-wrapper">
-  <canvas id="priceChart" ></canvas>
+  <canvas id="priceChart" width="1200" height="300"></canvas>
 </div>
 
-<input type="text" id="search" placeholder="Search product title..." />
+<div class="controls">
+  <input type="text" id="search" placeholder="Search product title...">
+</div>
 
 <table>
   <thead>
@@ -62,13 +64,11 @@ Papa.parse('apdar.csv', {
   download: true,
   header: true,
   complete: function(results) {
-    products = results.data
-      .map(p => ({
-        title: p.title,
-        price: Number(String(p.price).replace('Rs.', '').replace(/,/g, '').trim()),
-        link: p.link
-      }))
-      .filter(p => !isNaN(p.price));
+    products = results.data.map(p => ({
+      title: p.title,
+      price: Number(String(p.price).replace('Rs.', '').replace(/,/g,'').trim()),
+      link: p.link
+    })).filter(p => !isNaN(p.price));
 
     updateStats();
     renderTable(products);
@@ -90,7 +90,7 @@ function renderTable(data) {
   data.forEach(p => {
     const row = `<tr>
       <td>${p.title}</td>
-      <td>${p.price}</td>
+      <td>Rs. ${p.price}</td>
       <td><a href="${p.link}" target="_blank">View</a></td>
     </tr>`;
     body.innerHTML += row;
@@ -105,15 +105,15 @@ function renderChart(data) {
   chartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: data.map(() => ''),
+      labels: data.map(() => ''), // hide X labels
       datasets: [{
         label: 'Price (NPR)',
         data: data.map(p => p.price),
-        backgroundColor: 'rgba(37, 99, 235, 0.6)'
+        backgroundColor: 'rgba(37,99,235,0.6)'
       }]
     },
     options: {
-      responsive: true,
+      responsive: false,
       maintainAspectRatio: false,
       plugins: {
         tooltip: {
@@ -127,18 +127,16 @@ function renderChart(data) {
       },
       onClick: (evt, items) => {
         if(items.length) {
-          const index = items[0].index;
-          window.open(data[index].link, '_blank');
+          const idx = items[0].index;
+          window.open(data[idx].link, '_blank');
         }
       },
-      scales: {
-        y: { beginAtZero: true },
-        x: { ticks: { display: false } }
-      }
+      scales: { y: { beginAtZero: true }, x: { ticks: { display: false } } }
     }
   });
 }
 
+// Search
 document.getElementById('search').addEventListener('input', e => {
   const q = e.target.value.toLowerCase();
   const filtered = products.filter(p => p.title.toLowerCase().includes(q));
