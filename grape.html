@@ -12,91 +12,19 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 30px;
-    }
-
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-      text-align: center;
-    }
-
-    .card h2 {
-      margin: 0;
-      font-size: 26px;
-      color: #2563eb;
-    }
-
-    .card p {
-      margin: 6px 0 0;
-      color: #555;
-    }
-
-    .controls {
-      margin-bottom: 15px;
-    }
-
-    input {
-      padding: 8px;
-      width: 100%;
-      max-width: 300px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      margin-top: 15px;
-    }
-
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-      text-align: left;
-    }
-
-    th {
-      background: #f1f5f9;
-      cursor: pointer;
-    }
-
-    tr:hover {
-      background: #f9fafb;
-    }
-
-    .chart-wrapper {
-      width: 100%;
-      overflow-x: auto;
-      padding-top: 20px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
-
-    canvas {
-      
-      cursor: pointer;
-    }
+    body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 10px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center; }
+    .card h2 { margin: 0; font-size: 22px; color: #2563eb; }
+    .card p { margin: 6px 0 0; color: #555; }
+    .chart-wrapper { width: 100%; overflow-x: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+    canvas { cursor: pointer; height: 300px !important; }
+    table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
+    th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+    th { background: #f1f5f9; cursor: pointer; }
+    tr:hover { background: #f9fafb; }
+    input { padding: 8px; width: 100%; max-width: 300px; border-radius: 6px; border: 1px solid #ccc; margin-bottom: 15px; }
   </style>
 </head>
 <body>
@@ -109,15 +37,12 @@
   <div class="card"><h2 id="max">Rs. 0</h2><p>Most Expensive</p></div>
   <div class="card"><h2 id="avg">Rs. 0</h2><p>Average Price</p></div>
 </div>
+
 <div class="chart-wrapper">
-  <canvas id="priceChart" width="1450" height="350"></canvas>
-
+  <canvas id="priceChart"></canvas>
 </div>
 
-<div class="controls">
-  <input type="text" id="search" placeholder="Search product title..." />
-</div>
-
+<input type="text" id="search" placeholder="Search product title..." />
 
 <table>
   <thead>
@@ -129,8 +54,6 @@
   </thead>
   <tbody id="tableBody"></tbody>
 </table>
-
-
 
 <script>
 let products = [];
@@ -182,7 +105,7 @@ function renderChart(data) {
   chartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: data.map(() => ''), // hide X-axis labels
+      labels: data.map(() => ''),
       datasets: [{
         label: 'Price (NPR)',
         data: data.map(p => p.price),
@@ -190,7 +113,7 @@ function renderChart(data) {
       }]
     },
     options: {
-      responsive: false,
+      responsive: true,
       maintainAspectRatio: false,
       plugins: {
         tooltip: {
@@ -205,19 +128,17 @@ function renderChart(data) {
       onClick: (evt, items) => {
         if(items.length) {
           const index = items[0].index;
-          const productLink = data[index].link;
-          window.open(productLink, '_blank');
+          window.open(data[index].link, '_blank');
         }
       },
       scales: {
         y: { beginAtZero: true },
-        x: { ticks: { display: false } } // hide all labels below bars
+        x: { ticks: { display: false } }
       }
     }
   });
 }
 
-// Search filter
 document.getElementById('search').addEventListener('input', e => {
   const q = e.target.value.toLowerCase();
   const filtered = products.filter(p => p.title.toLowerCase().includes(q));
