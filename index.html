@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Product Price Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PapaParse for CSV -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    body { font-family: Arial; background: #f4f6f8; margin: 0; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 10px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center; }
+    .card h2 { margin: 0; font-size: 26px; color: #2563eb; }
+    .card p { margin: 6px 0 0; color: #555; }
+    .chart-wrapper { width: 100%; overflow-x: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+    canvas { cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+    th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+    th { background: #f1f5f9; }
+    tr:hover { background: #f9fafb; }
+    .controls { margin: 15px 0; }
+    input { padding: 8px; width: 100%; max-width: 300px; border-radius: 6px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+
+<h1>🧴 Product Price Dashboard</h1>
+
+<div class="stats">
+  <div class="card"><h2 id="total">0</h2><p>Total Products</p></div>
+  <div class="card"><h2 id="min">Rs. 0</h2><p>Cheapest</p></div>
+  <div class="card"><h2 id="max">Rs. 0</h2><p>Most Expensive</p></div>
+  <div class="card"><h2 id="avg">Rs. 0</h2><p>Average Price</p></div>
+</div>
+
+<div class="chart-wrapper">
+  <canvas id="priceChart" width="1200" height="300"></canvas>
+</div>
+
+<div class="controls">
+  <input type="text" id="search" placeholder="Search product title...">
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Price (NPR)</th>
+      <th>Link</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+let products = [];
+
+Papa.parse('apdar.csv', {
+  download: true,
+  header: true,
+  complete: function(results) {
+    products = results.data.map(p => ({
+      title: p.title,
+      price: Number(String(p.price).replace('Rs.', '').replace(/,/g,'').trim()),
+      link: p.link
+    })).filter(p => !isNaN(p.price));
+
+    updateStats();
+    renderTable(products);
+    renderChart(products);
+  }
+});
+
+function updateStats() {
+  const prices = products.map(p => p.price);
+  document.getElementById('total').innerText = prices.length;
+  document.getElementById('min').innerText = 'Rs. ' + Math.min(...prices);
+  document.getElementById('max').innerText = 'Rs. ' + Math.max(...prices);
+  document.getElementById('avg').innerText = 'Rs. ' + Math.round(prices.reduce((a,b)=>a+b,0)/prices.length);
+}
+
+function renderTable(data) {
+  const body = document.getElementById('tableBody');
+  body.innerHTML = '';
+  data.forEach(p => {
+    const row = `<tr>
+      <td>${p.title}</td>
+      <td>Rs. ${p.price}</td>
+      <td><a href="${p.link}" target="_blank">View</a></td>
+    </tr>`;
+    body.innerHTML += row;
+  });
+}
+
+let chartInstance;
+function renderChart(data) {
+  const ctx = document.getElementById('priceChart');
+  if(chartInstance) chartInstance.destroy();
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(() => ''), // hide X labels
+      datasets: [{
+        label: 'Price (NPR)',
+        data: data.map(p => p.price),
+        backgroundColor: 'rgba(37,99,235,0.6)'
+      }]
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const product = data[context.dataIndex];
+              return `${product.title}: Rs. ${product.price}`;
+            }
+          }
+        }
+      },
+      onClick: (evt, items) => {
+        if(items.length) {
+          const idx = items[0].index;
+          window.open(data[idx].link, '_blank');
+        }
+      },
+      scales: { y: { beginAtZero: true }, x: { ticks: { display: false } } }
+    }
+  });
+}
+
+// Search
+document.getElementById('search').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  const filtered = products.filter(p => p.title.toLowerCase().includes(q));
+  renderTable(filtered);
+  renderChart(filtered);
+});
+</script>
+
+</body>
+</html>
